@@ -1,0 +1,366 @@
+import { useEffect, useMemo, useRef, useState } from 'react'
+
+const THEMES = [
+  {
+    id: 'corporate',
+    label: 'Corporate',
+    tone: 'Kemas',
+    shell: 'bg-[#ecf2f7]',
+    orbA: 'bg-cyan-300/35',
+    orbB: 'bg-sky-200/45',
+    orbC: 'bg-emerald-200/35',
+    panel: 'border-slate-200/90 bg-white/85 shadow-cyan-950/10',
+    badge: 'border-cyan-700/20 bg-cyan-50 text-cyan-700',
+    accent: 'bg-slate-900 hover:bg-cyan-700',
+    inputFocus: 'focus:border-cyan-500 focus:ring-cyan-100',
+    sidePanel: 'border-slate-200 bg-slate-900 text-slate-100',
+    sideItem: 'border-slate-700/80 bg-slate-800/70 text-slate-300',
+    heading: 'tracking-tight',
+  },
+  {
+    id: 'playful',
+    label: 'Playful',
+    tone: 'Energetik',
+    shell: 'bg-[#fff5eb]',
+    orbA: 'bg-amber-300/45',
+    orbB: 'bg-fuchsia-200/45',
+    orbC: 'bg-orange-200/45',
+    panel: 'border-amber-200/90 bg-white/85 shadow-orange-950/10',
+    badge: 'border-orange-700/20 bg-orange-50 text-orange-700',
+    accent: 'bg-orange-500 hover:bg-fuchsia-600',
+    inputFocus: 'focus:border-orange-500 focus:ring-orange-100',
+    sidePanel: 'border-orange-200 bg-[#25161f] text-amber-50',
+    sideItem: 'border-orange-300/30 bg-[#34202d] text-amber-100',
+    heading: 'tracking-normal',
+  },
+  {
+    id: 'neo',
+    label: 'Neo Mint',
+    tone: 'Futuristik',
+    shell: 'bg-[#eefcf7]',
+    orbA: 'bg-emerald-300/45',
+    orbB: 'bg-lime-200/50',
+    orbC: 'bg-teal-200/45',
+    panel: 'border-emerald-200/90 bg-white/85 shadow-emerald-950/10',
+    badge: 'border-emerald-700/20 bg-emerald-50 text-emerald-700',
+    accent: 'bg-teal-700 hover:bg-emerald-600',
+    inputFocus: 'focus:border-emerald-500 focus:ring-emerald-100',
+    sidePanel: 'border-emerald-200 bg-[#062b2b] text-emerald-50',
+    sideItem: 'border-emerald-300/30 bg-[#0c3934] text-emerald-100',
+    heading: 'tracking-tight',
+  },
+]
+
+function App() {
+  const endpoint =
+    'https://script.google.com/macros/s/AKfycbyP8rKrQFT4Ho0g5lyI51dQZ-VBA-a9iKmELX_qk1D6xKkZ_bYwL9PYxgEKU09qO04f/exec'
+
+  const [materials, setMaterials] = useState([])
+  const [material, setMaterial] = useState('')
+  const [kuantiti, setKuantiti] = useState('')
+  const [isLoadingMaterials, setIsLoadingMaterials] = useState(true)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [status, setStatus] = useState({ type: 'idle', message: '' })
+  const [themeId, setThemeId] = useState('corporate')
+  const [isMaterialMenuOpen, setIsMaterialMenuOpen] = useState(false)
+  const materialMenuRef = useRef(null)
+
+  useEffect(() => {
+    const loadMaterials = async () => {
+      try {
+        const response = await fetch(`${endpoint}?action=getMaterials`)
+        const data = await response.json()
+
+        if (!Array.isArray(data)) {
+          throw new Error('Format material tidak sah')
+        }
+
+        setMaterials(data)
+      } catch (error) {
+        setStatus({
+          type: 'error',
+          message: 'Gagal memuat senarai material. Sila cuba lagi.',
+        })
+      } finally {
+        setIsLoadingMaterials(false)
+      }
+    }
+
+    loadMaterials()
+  }, [endpoint])
+
+  const statusClass = useMemo(() => {
+    if (status.type === 'success') {
+      return 'border-emerald-400/50 bg-emerald-100 text-emerald-800'
+    }
+
+    if (status.type === 'error') {
+      return 'border-rose-400/50 bg-rose-100 text-rose-800'
+    }
+
+    return 'border-slate-300/70 bg-slate-50 text-slate-700'
+  }, [status.type])
+
+  const activeTheme = useMemo(
+    () => THEMES.find((theme) => theme.id === themeId) ?? THEMES[0],
+    [themeId],
+  )
+
+  const filteredMaterials = useMemo(() => {
+    const keyword = material.trim().toLowerCase()
+
+    if (!keyword) {
+      return materials.slice(0, 8)
+    }
+
+    return materials
+      .filter((item) => item.toLowerCase().includes(keyword))
+      .slice(0, 8)
+  }, [material, materials])
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (!materialMenuRef.current?.contains(event.target)) {
+        setIsMaterialMenuOpen(false)
+      }
+    }
+
+    document.addEventListener('pointerdown', handleClickOutside)
+
+    return () => {
+      document.removeEventListener('pointerdown', handleClickOutside)
+    }
+  }, [])
+
+  const handleSubmit = async (event) => {
+    event.preventDefault()
+
+    if (!material.trim()) {
+      setStatus({ type: 'error', message: 'Material wajib diisi.' })
+      return
+    }
+
+    const jumlah = Number(kuantiti)
+    if (!jumlah || jumlah < 1) {
+      setStatus({ type: 'error', message: 'Kuantiti mesti sekurang-kurangnya 1.' })
+      return
+    }
+
+    setIsSubmitting(true)
+    setStatus({ type: 'idle', message: 'Menghantar restok...' })
+
+    const formData = new FormData()
+    formData.append('material', material.trim())
+    formData.append('kuantiti', String(jumlah))
+    formData.append('type', 'restock')
+
+    try {
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        body: formData,
+      })
+
+      const resultText = await response.text()
+
+      if (resultText.includes('Restock Success')) {
+        setStatus({ type: 'success', message: 'Restock berjaya direkod.' })
+        setKuantiti('')
+      } else if (resultText.includes('Error')) {
+        setStatus({ type: 'error', message: resultText })
+      } else {
+        setStatus({ type: 'success', message: resultText })
+      }
+    } catch (error) {
+      setStatus({
+        type: 'error',
+        message: 'Tidak dapat menghubungi server. Semak talian internet.',
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  return (
+    <main className={`relative min-h-screen overflow-hidden px-4 py-10 sm:px-8 sm:py-12 ${activeTheme.shell}`}>
+      <div className={`absolute -left-24 top-10 h-72 w-72 rounded-full blur-3xl ${activeTheme.orbA}`} />
+      <div className={`absolute right-0 top-0 h-80 w-80 rounded-full blur-3xl ${activeTheme.orbB}`} />
+      <div className={`absolute bottom-0 left-1/3 h-96 w-96 rounded-full blur-3xl ${activeTheme.orbC}`} />
+
+      <section className="relative mx-auto w-full max-w-5xl">
+        <div className={`reveal reveal-1 mb-8 rounded-3xl border p-6 shadow-2xl backdrop-blur-lg sm:p-10 ${activeTheme.panel}`}>
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <p className={`inline-flex rounded-full border px-4 py-1 text-xs font-bold uppercase tracking-[0.22em] ${activeTheme.badge}`}>
+              Restock Console
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {THEMES.map((theme) => (
+                <button
+                  key={theme.id}
+                  type="button"
+                  onClick={() => setThemeId(theme.id)}
+                  className={`rounded-full border px-3 py-1 text-xs font-bold uppercase tracking-wide transition ${
+                    themeId === theme.id
+                      ? 'border-slate-900 bg-slate-900 text-white'
+                      : 'border-slate-300 bg-white/80 text-slate-700 hover:border-slate-500'
+                  }`}
+                >
+                  {theme.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <h1
+            className={`text-4xl leading-[1.05] text-slate-900 sm:text-5xl ${activeTheme.heading}`}
+            style={{ fontFamily: 'Archivo Black, sans-serif' }}
+          >
+            Restok barang lebih bergaya, tanpa sentuh logik fungsi
+          </h1>
+          <p className="mt-4 max-w-3xl text-base leading-relaxed text-slate-600 sm:text-lg">
+            Tema aktif: <span className="font-bold text-slate-800">{activeTheme.label}</span>{' '}
+            ({activeTheme.tone}). Semua perubahan ini fokus pada visual, spacing,
+            tipografi, dan motion halus.
+          </p>
+        </div>
+
+        <div className="grid gap-8 lg:grid-cols-[1.1fr,0.9fr]">
+          <form
+            onSubmit={handleSubmit}
+            className="reveal reveal-2 lift-card rounded-3xl border border-slate-200 bg-white p-6 shadow-xl shadow-slate-900/10 sm:p-8"
+          >
+            <div className="mb-6 flex items-center justify-between">
+              <h2
+                className={`text-2xl text-slate-900 ${activeTheme.heading}`}
+                style={{ fontFamily: 'Archivo Black, sans-serif' }}
+              >
+                Borang Restok
+              </h2>
+              <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-600">
+                Live
+              </span>
+            </div>
+
+            <label className="mb-2 block text-sm font-bold uppercase tracking-wide text-slate-700">
+              Material
+            </label>
+            <div ref={materialMenuRef} className="relative mb-6">
+              <input
+                type="text"
+                value={material}
+                onChange={(event) => {
+                  setMaterial(event.target.value)
+                  setIsMaterialMenuOpen(true)
+                }}
+                onFocus={() => setIsMaterialMenuOpen(true)}
+                placeholder={
+                  isLoadingMaterials
+                    ? 'Memuat material...'
+                    : 'Taip atau pilih material'
+                }
+                className={`w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 pr-12 text-slate-900 outline-none transition focus:bg-white focus:ring-4 ${activeTheme.inputFocus}`}
+                disabled={isLoadingMaterials || isSubmitting}
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setIsMaterialMenuOpen((open) => !open)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
+                aria-label="Buka senarai material"
+                disabled={isLoadingMaterials || isSubmitting}
+              >
+                <svg
+                  className={`h-4 w-4 transition ${isMaterialMenuOpen ? 'rotate-180' : ''}`}
+                  viewBox="0 0 20 20"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M5 7.5L10 12.5L15 7.5"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </button>
+
+              {isMaterialMenuOpen && !isLoadingMaterials && (
+                <div className="absolute z-20 mt-2 w-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl shadow-slate-900/10">
+                  <div className="max-h-56 overflow-y-auto p-2">
+                    {filteredMaterials.length > 0 ? (
+                      filteredMaterials.map((item) => (
+                        <button
+                          key={item}
+                          type="button"
+                          onClick={() => {
+                            setMaterial(item)
+                            setIsMaterialMenuOpen(false)
+                          }}
+                          className="mb-1 block w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-100 last:mb-0"
+                        >
+                          {item}
+                        </button>
+                      ))
+                    ) : (
+                      <p className="px-3 py-2 text-sm text-slate-500">Tiada padanan material.</p>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <label className="mb-2 block text-sm font-bold uppercase tracking-wide text-slate-700">
+              Kuantiti
+            </label>
+            <input
+              type="number"
+              min="1"
+              value={kuantiti}
+              onChange={(event) => setKuantiti(event.target.value)}
+              placeholder="Masukkan jumlah"
+              className={`mb-7 w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition focus:bg-white focus:ring-4 ${activeTheme.inputFocus}`}
+              disabled={isSubmitting}
+              required
+            />
+
+            <button
+              type="submit"
+              disabled={isSubmitting || isLoadingMaterials}
+              className={`w-full rounded-xl px-5 py-3 text-sm font-bold uppercase tracking-[0.16em] text-white transition disabled:cursor-not-allowed disabled:bg-slate-400 ${activeTheme.accent}`}
+            >
+              {isSubmitting ? 'Menghantar...' : 'Hantar Restok'}
+            </button>
+
+            {status.message && (
+              <div className={`mt-5 rounded-xl border px-4 py-3 text-sm font-medium ${statusClass}`}>
+                {status.message}
+              </div>
+            )}
+          </form>
+
+          <aside className={`reveal reveal-3 lift-card rounded-3xl border p-6 shadow-xl shadow-slate-900/30 sm:p-8 ${activeTheme.sidePanel}`}>
+            <h3
+              className={`text-2xl leading-tight ${activeTheme.heading}`}
+              style={{ fontFamily: 'Archivo Black, sans-serif' }}
+            >
+              Apa yang ditambah pada design
+            </h3>
+            <ul className="mt-6 space-y-4 text-sm sm:text-base">
+              <li className={`reveal reveal-4 rounded-xl border p-4 ${activeTheme.sideItem}`}>
+                Stagger reveal: panel muncul berperingkat untuk rasa lebih hidup.
+              </li>
+              <li className={`reveal reveal-5 rounded-xl border p-4 ${activeTheme.sideItem}`}>
+                3 tema moden boleh tukar terus tanpa ubah aliran fungsi.
+              </li>
+              <li className={`reveal reveal-6 rounded-xl border p-4 ${activeTheme.sideItem}`}>
+                Spacing dan typography dihaluskan supaya lebih konsisten dan premium.
+              </li>
+            </ul>
+          </aside>
+        </div>
+      </section>
+    </main>
+  )
+}
+
+export default App
