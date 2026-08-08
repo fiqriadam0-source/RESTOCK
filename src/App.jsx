@@ -359,7 +359,6 @@ function App() {
               </div>
             )}
           </form>
-
           <aside className={`reveal reveal-3 lift-card rounded-3xl border p-6 shadow-xl shadow-slate-900/30 sm:p-8 ${activeTheme.sidePanel}`}>
   <div className="mb-5 flex items-center justify-between gap-3">
     <h3
