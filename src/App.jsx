@@ -63,6 +63,8 @@ function App() {
   const [status, setStatus] = useState({ type: 'idle', message: '' })
   const [themeId, setThemeId] = useState('corporate')
   const [isMaterialMenuOpen, setIsMaterialMenuOpen] = useState(false)
+  const [history, setHistory] = useState([])
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false)
   const materialMenuRef = useRef(null)
 
   useEffect(() => {
@@ -139,6 +141,26 @@ function App() {
       setStatus({ type: 'error', message: 'Material wajib diisi.' })
       return
     }
+    const loadHistory = async () => {
+  setIsLoadingHistory(true)
+  try {
+    const response = await fetch(`${endpoint}?action=getUsageHistory`)
+    const data = await response.json()
+
+    if (!Array.isArray(data)) {
+      throw new Error('Format history tidak sah')
+    }
+
+    setHistory(data)
+  } catch (error) {
+    setStatus({
+      type: 'error',
+      message: 'Gagal memuat usage history.',
+    })
+  } finally {
+    setIsLoadingHistory(false)
+  }
+}
 
     const jumlah = Number(kuantiti)
     if (!jumlah || jumlah < 1) {
@@ -339,28 +361,48 @@ function App() {
           </form>
 
           <aside className={`reveal reveal-3 lift-card rounded-3xl border p-6 shadow-xl shadow-slate-900/30 sm:p-8 ${activeTheme.sidePanel}`}>
-            <h3
-              className={`text-2xl leading-tight ${activeTheme.heading}`}
-              style={{ fontFamily: 'Archivo Black, sans-serif' }}
-            >
-              Apa yang ditambah pada design
-            </h3>
-            <ul className="mt-6 space-y-4 text-sm sm:text-base">
-              <li className={`reveal reveal-4 rounded-xl border p-4 ${activeTheme.sideItem}`}>
-                Stagger reveal: panel muncul berperingkat untuk rasa lebih hidup.
-              </li>
-              <li className={`reveal reveal-5 rounded-xl border p-4 ${activeTheme.sideItem}`}>
-                3 tema moden boleh tukar terus tanpa ubah aliran fungsi.
-              </li>
-              <li className={`reveal reveal-6 rounded-xl border p-4 ${activeTheme.sideItem}`}>
-                Spacing dan typography dihaluskan supaya lebih konsisten dan premium.
-              </li>
-            </ul>
-          </aside>
+  <div className="mb-5 flex items-center justify-between gap-3">
+    <h3
+      className={`text-2xl leading-tight ${activeTheme.heading}`}
+      style={{ fontFamily: 'Archivo Black, sans-serif' }}
+    >
+      Usage History
+    </h3>
+    <button
+      type="button"
+      onClick={loadHistory}
+      disabled={isLoadingHistory}
+      className="rounded-full bg-white/10 px-3 py-1.5 text-xs font-bold uppercase tracking-wide transition hover:bg-white/20 disabled:opacity-50"
+    >
+      {isLoadingHistory ? 'Loading...' : 'Refresh'}
+    </button>
+  </div>
+
+  {history.length === 0 ? (
+    <p className="text-sm opacity-70">
+      Klik <strong>Refresh</strong> untuk muat history.
+    </p>
+  ) : (
+    <div className="max-h-96 space-y-3 overflow-y-auto pr-1">
+      {history.map((item, index) => (
+        <div
+          key={index}
+          className={`rounded-xl border p-4 text-sm ${activeTheme.sideItem}`}
+        >
+          <div className="mb-1 flex items-start justify-between gap-2">
+            <p className="font-bold leading-tight">{item.material}</p>
+            <span className="shrink-0 text-xs opacity-70">
+              {item.kuantiti} {item.unit || ''}
+            </span>
+          </div>
+          <p className="text-xs opacity-80">
+            {item.nama} • {item.tujuan}
+          </p>
+          <p className="mt-1 text-xs opacity-60">{item.timestamp}</p>
         </div>
-      </section>
-    </main>
-  )
-}
+      ))}
+    </div>
+  )}
+</aside>
 
 export default App
