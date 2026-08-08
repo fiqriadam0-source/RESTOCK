@@ -53,7 +53,7 @@ const THEMES = [
 
 function App() {
   const endpoint =
-    'https://script.google.com/macros/s/AKfycbyP8rKrQFT4Ho0g5lyI51dQZ-VBA-a9iKmELX_qk1D6xKkZ_bYwL9PYxgEKU09qO04f/exec'
+    'https://script.google.com/macros/s/AKfycbwXC8y3wc-IL23cHtgVriOtjeH0GsaxEXRsttsuRkilLry7xZ-WWstvLlo6b1WH3E0k/exec'
 
   const [materials, setMaterials] = useState([])
   const [material, setMaterial] = useState('')
