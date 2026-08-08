@@ -63,9 +63,11 @@ function App() {
   const [status, setStatus] = useState({ type: 'idle', message: '' })
   const [themeId, setThemeId] = useState('corporate')
   const [isMaterialMenuOpen, setIsMaterialMenuOpen] = useState(false)
-  const [history, setHistory] = useState([])
-  const [isLoadingHistory, setIsLoadingHistory] = useState(false)
   const materialMenuRef = useRef(null)
+
+  // ===== STOCK =====
+  const [stock, setStock] = useState([])
+  const [isLoadingStock, setIsLoadingStock] = useState(false)
 
   useEffect(() => {
     const loadMaterials = async () => {
@@ -141,26 +143,6 @@ function App() {
       setStatus({ type: 'error', message: 'Material wajib diisi.' })
       return
     }
-    const loadHistory = async () => {
-  setIsLoadingHistory(true)
-  try {
-    const response = await fetch(`${endpoint}?action=getUsageHistory`)
-    const data = await response.json()
-
-    if (!Array.isArray(data)) {
-      throw new Error('Format history tidak sah')
-    }
-
-    setHistory(data)
-  } catch (error) {
-    setStatus({
-      type: 'error',
-      message: 'Gagal memuat usage history.',
-    })
-  } finally {
-    setIsLoadingHistory(false)
-  }
-}
 
     const jumlah = Number(kuantiti)
     if (!jumlah || jumlah < 1) {
@@ -187,6 +169,7 @@ function App() {
       if (resultText.includes('Restock Success')) {
         setStatus({ type: 'success', message: 'Restock berjaya direkod.' })
         setKuantiti('')
+        loadStock() // refresh stock selepas restok berjaya
       } else if (resultText.includes('Error')) {
         setStatus({ type: 'error', message: resultText })
       } else {
@@ -201,6 +184,33 @@ function App() {
       setIsSubmitting(false)
     }
   }
+
+  // ===== FUNCTION LOAD STOCK =====
+  const loadStock = async () => {
+    setIsLoadingStock(true)
+    try {
+      const response = await fetch(`${endpoint}?action=getStock`)
+      const data = await response.json()
+
+      if (!Array.isArray(data)) {
+        throw new Error('Format stock tidak sah')
+      }
+
+      setStock(data)
+    } catch (error) {
+      setStatus({
+        type: 'error',
+        message: 'Gagal memuat maklumat stock.',
+      })
+    } finally {
+      setIsLoadingStock(false)
+    }
+  }
+
+  // Auto load stock bila page dibuka
+  useEffect(() => {
+    loadStock()
+  }, [])
 
   return (
     <main className={`relative min-h-screen overflow-hidden px-4 py-10 sm:px-8 sm:py-12 ${activeTheme.shell}`}>
@@ -359,49 +369,59 @@ function App() {
               </div>
             )}
           </form>
-          <aside className={`reveal reveal-3 lift-card rounded-3xl border p-6 shadow-xl shadow-slate-900/30 sm:p-8 ${activeTheme.sidePanel}`}>
-  <div className="mb-5 flex items-center justify-between gap-3">
-    <h3
-      className={`text-2xl leading-tight ${activeTheme.heading}`}
-      style={{ fontFamily: 'Archivo Black, sans-serif' }}
-    >
-      Usage History
-    </h3>
-    <button
-      type="button"
-      onClick={loadHistory}
-      disabled={isLoadingHistory}
-      className="rounded-full bg-white/10 px-3 py-1.5 text-xs font-bold uppercase tracking-wide transition hover:bg-white/20 disabled:opacity-50"
-    >
-      {isLoadingHistory ? 'Loading...' : 'Refresh'}
-    </button>
-  </div>
 
-  {history.length === 0 ? (
-    <p className="text-sm opacity-70">
-      Klik <strong>Refresh</strong> untuk muat history.
-    </p>
-  ) : (
-    <div className="max-h-96 space-y-3 overflow-y-auto pr-1">
-      {history.map((item, index) => (
-        <div
-          key={index}
-          className={`rounded-xl border p-4 text-sm ${activeTheme.sideItem}`}
-        >
-          <div className="mb-1 flex items-start justify-between gap-2">
-            <p className="font-bold leading-tight">{item.material}</p>
-            <span className="shrink-0 text-xs opacity-70">
-              {item.kuantiti} {item.unit || ''}
-            </span>
-          </div>
-          <p className="text-xs opacity-80">
-            {item.nama} • {item.tujuan}
-          </p>
-          <p className="mt-1 text-xs opacity-60">{item.timestamp}</p>
+          {/* ===== PANEL STOCK ===== */}
+          <aside className={`reveal reveal-3 lift-card rounded-3xl border p-6 shadow-xl shadow-slate-900/30 sm:p-8 ${activeTheme.sidePanel}`}>
+            <div className="mb-5 flex items-center justify-between gap-3">
+              <h3
+                className={`text-2xl leading-tight ${activeTheme.heading}`}
+                style={{ fontFamily: 'Archivo Black, sans-serif' }}
+              >
+                Maklumat Stock
+              </h3>
+              <button
+                type="button"
+                onClick={loadStock}
+                disabled={isLoadingStock}
+                className="rounded-full bg-white/10 px-3 py-1.5 text-xs font-bold uppercase tracking-wide transition hover:bg-white/20 disabled:opacity-50"
+              >
+                {isLoadingStock ? 'Loading...' : 'Refresh'}
+              </button>
+            </div>
+
+            {isLoadingStock ? (
+              <p className="text-sm opacity-70">Sedang memuatkan stock...</p>
+            ) : stock.length === 0 ? (
+              <p className="text-sm opacity-70">Tiada data stock.</p>
+            ) : (
+              <div className="max-h-96 space-y-3 overflow-y-auto pr-1">
+                {stock.map((item, index) => (
+                  <div
+                    key={index}
+                    className={`rounded-xl border p-4 text-sm ${activeTheme.sideItem}`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="font-bold leading-tight">{item.material}</p>
+                      <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-bold ${
+                        Number(item.baki) <= Number(item.minimum)
+                          ? 'bg-red-500/20 text-red-300'
+                          : 'bg-emerald-500/20 text-emerald-300'
+                      }`}>
+                        {item.baki}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-xs opacity-70">
+                      Minimum: {item.minimum}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </aside>
         </div>
-      ))}
-    </div>
-  )}
-</aside>
+      </section>
+    </main>
+  )
+}
 
 export default App
