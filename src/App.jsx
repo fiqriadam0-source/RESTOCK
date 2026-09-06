@@ -276,7 +276,7 @@ function App() {
 
       <section className="relative mx-auto w-full max-w-5xl">
         {/* ===== HEADER + HAMBURGER MENU ===== */}
-        <div className={`mb-6 flex items-center justify-between rounded-2xl border px-4 py-3 shadow-lg backdrop-blur-lg sm:px-6 ${activeTheme.panel}`}>
+        <div className={`relative z-50 mb-6 flex items-center justify-between rounded-2xl border px-4 py-3 shadow-lg backdrop-blur-lg sm:px-6 ${activeTheme.panel}`}>
           <div className="flex items-center gap-3">
             <div className={`rounded-full border px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] ${activeTheme.badge}`}>
               Restock Console
@@ -303,7 +303,7 @@ function App() {
 
             {/* Dropdown Menu */}
             {isMenuOpen && (
-              <div className="absolute right-0 top-12 z-50 w-56 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl shadow-slate-900/20">
+              <div className="absolute right-0 top-12 z-[100] w-56 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl shadow-slate-900/20">
                 <button
                   type="button"
                   onClick={() => changePage('restock')}
