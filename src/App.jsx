@@ -158,12 +158,16 @@ function App() {
   )
 
   const filteredMaterials = useMemo(() => {
-    const keyword = material.trim().toLowerCase()
-    if (!keyword) return materials.slice(0, 8)
+  const keyword = material.trim().toLowerCase()
+
+  if (!keyword) {
     return materials
-      .filter((item) => item.toLowerCase().includes(keyword))
-      .slice(0, 8)
-  }, [material, materials])
+  }
+
+  return materials.filter((item) =>
+    item.toLowerCase().includes(keyword)
+  )
+}, [material, materials])
 
   const handleSubmit = async (event) => {
     event.preventDefault()
