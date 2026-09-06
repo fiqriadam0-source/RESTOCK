@@ -76,19 +76,51 @@ function App() {
   const [isLoadingStock, setIsLoadingStock] = useState(false)
 
   // ===== TELEGRAM =====
-  const [tgToken, setTgToken] = useState('')
-  const [tgChatId, setTgChatId] = useState('')
   const [tgMessage, setTgMessage] = useState('')
   const [tgStatus, setTgStatus] = useState({ type: 'idle', message: '' })
   const [isSendingTg, setIsSendingTg] = useState(false)
 
   // Load Telegram data dari localStorage
-  useEffect(() => {
-    const savedToken = localStorage.getItem('tg_token')
-    const savedChatId = localStorage.getItem('tg_chatId')
-    if (savedToken) setTgToken(savedToken)
-    if (savedChatId) setTgChatId(savedChatId)
-  }, [])
+  const hantarMesej = async () => {
+  // ===== PASTE TOKEN & CHAT ID DI SINI =====
+  const token = '8852079141:AAEOz7klWWkNNxA2HuCL4O_w8E4XJmRypEg'
+  const chatId = '8186247289'
+  // ========================================
+
+  if (!tgMessage.trim()) {
+    setTgStatus({ type: 'error', message: 'Sila tulis mesej dahulu!' })
+    return
+  }
+
+  setIsSendingTg(true)
+  setTgStatus({ type: 'idle', message: 'Sedang menghantar...' })
+
+  try {
+    const url = `https://api.telegram.org/bot${token}/sendMessage`
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text: tgMessage.trim(),
+        parse_mode: 'HTML',
+      }),
+    })
+
+    const data = await response.json()
+
+    if (data.ok) {
+      setTgStatus({ type: 'success', message: 'Mesej berjaya dihantar!' })
+      setTgMessage('')
+    } else {
+      setTgStatus({ type: 'error', message: `Gagal: ${data.description}` })
+    }
+  } catch (error) {
+    setTgStatus({ type: 'error', message: `Ralat: ${error.message}` })
+  } finally {
+    setIsSendingTg(false)
+  }
+}
 
   // Tutup menu bila klik luar
   useEffect(() => {
