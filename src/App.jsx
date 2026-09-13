@@ -251,52 +251,6 @@ function App() {
   }
 
   // ===== TELEGRAM FUNCTIONS =====
-  const hantarMesej = async () => {
-    if (!tgToken.trim() || !tgChatId.trim() || !tgMessage.trim()) {
-      setTgStatus({ type: 'error', message: 'Sila isi semua medan!' })
-      return
-    }
-
-    localStorage.setItem('tg_token', tgToken.trim())
-    localStorage.setItem('tg_chatId', tgChatId.trim())
-
-    setIsSendingTg(true)
-    setTgStatus({ type: 'idle', message: 'Sedang menghantar...' })
-
-    try {
-      const url = `https://api.telegram.org/bot${tgToken.trim()}/sendMessage`
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          chat_id: tgChatId.trim(),
-          text: tgMessage.trim(),
-          parse_mode: 'HTML',
-        }),
-      })
-
-      const data = await response.json()
-
-      if (data.ok) {
-        setTgStatus({ type: 'success', message: 'Mesej berjaya dihantar!' })
-        setTgMessage('')
-      } else {
-        setTgStatus({ type: 'error', message: `Gagal: ${data.description}` })
-      }
-    } catch (error) {
-      setTgStatus({ type: 'error', message: `Ralat: ${error.message}` })
-    } finally {
-      setIsSendingTg(false)
-    }
-  }
-
-  const padamDataTg = () => {
-    localStorage.removeItem('tg_token')
-    localStorage.removeItem('tg_chatId')
-    setTgToken('')
-    setTgChatId('')
-    setTgStatus({ type: 'success', message: 'Data telah dipadam.' })
-  }
 
   const changePage = (page) => {
     setCurrentPage(page)
