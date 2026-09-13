@@ -539,94 +539,62 @@ function App() {
         )}
 
         {/* ===== PAGE: TELEGRAM SENDER ===== */}
-        {currentPage === 'telegram' && (
-          <div className="mx-auto max-w-md">
-            <div className={`rounded-3xl border p-6 shadow-2xl backdrop-blur-lg sm:p-8 ${activeTheme.panel}`}>
-              <div className="mb-6 text-center">
-                <h2
-                  className={`text-3xl text-slate-900 ${activeTheme.heading}`}
-                  style={{ fontFamily: 'Archivo Black, sans-serif' }}
-                >
-                  Telegram Messenger
-                </h2>
-                <p className="mt-2 text-sm text-slate-500">Token & Chat ID disimpan automatik</p>
-              </div>
+        {/* ===== PAGE: TELEGRAM SENDER ===== */}
+{currentPage === 'telegram' && (
+  <div className="mx-auto max-w-md">
+    <div className={`rounded-3xl border p-6 shadow-2xl backdrop-blur-lg sm:p-8 ${activeTheme.panel}`}>
+      <div className="mb-6 text-center">
+        <h2
+          className={`text-3xl text-slate-900 ${activeTheme.heading}`}
+          style={{ fontFamily: 'Archivo Black, sans-serif' }}
+        >
+          Telegram Messenger
+        </h2>
+        <p className="mt-2 text-sm text-slate-500">
+          Token & Chat ID telah ditetapkan dalam script
+        </p>
+      </div>
 
-              <div className="space-y-5">
-                <div>
-                  <label className="mb-2 block text-sm font-bold uppercase tracking-wide text-slate-700">
-                    Bot Token
-                  </label>
-                  <input
-                    type="text"
-                    value={tgToken}
-                    onChange={(e) => setTgToken(e.target.value)}
-                    placeholder="Masukkan Bot Token"
-                    className={`w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition focus:bg-white focus:ring-4 ${activeTheme.inputFocus}`}
-                  />
-                </div>
+      <div className="space-y-5">
+        <div>
+          <label className="mb-2 block text-sm font-bold uppercase tracking-wide text-slate-700">
+            Mesej
+          </label>
+          <textarea
+            value={tgMessage}
+            onChange={(e) => setTgMessage(e.target.value)}
+            placeholder="Tulis mesej anda di sini..."
+            rows={5}
+            className={`w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition focus:bg-white focus:ring-4 ${activeTheme.inputFocus}`}
+          />
+        </div>
 
-                <div>
-                  <label className="mb-2 block text-sm font-bold uppercase tracking-wide text-slate-700">
-                    Chat ID
-                  </label>
-                  <input
-                    type="text"
-                    value={tgChatId}
-                    onChange={(e) => setTgChatId(e.target.value)}
-                    placeholder="Masukkan Chat ID"
-                    className={`w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition focus:bg-white focus:ring-4 ${activeTheme.inputFocus}`}
-                  />
-                </div>
+        <button
+          type="button"
+          onClick={hantarMesej}
+          disabled={isSendingTg}
+          className={`w-full rounded-xl px-5 py-3.5 text-sm font-bold uppercase tracking-[0.16em] text-white transition disabled:cursor-not-allowed disabled:bg-slate-400 ${activeTheme.accent}`}
+        >
+          {isSendingTg ? 'Menghantar...' : 'Hantar Mesej'}
+        </button>
 
-                <div>
-                  <label className="mb-2 block text-sm font-bold uppercase tracking-wide text-slate-700">
-                    Mesej
-                  </label>
-                  <textarea
-                    value={tgMessage}
-                    onChange={(e) => setTgMessage(e.target.value)}
-                    placeholder="Tulis mesej anda di sini..."
-                    rows={4}
-                    className={`w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition focus:bg-white focus:ring-4 ${activeTheme.inputFocus}`}
-                  />
-                </div>
-
-                <button
-                  type="button"
-                  onClick={hantarMesej}
-                  disabled={isSendingTg}
-                  className={`w-full rounded-xl px-5 py-3.5 text-sm font-bold uppercase tracking-[0.16em] text-white transition disabled:cursor-not-allowed disabled:bg-slate-400 ${activeTheme.accent}`}
-                >
-                  {isSendingTg ? 'Menghantar...' : 'Hantar Mesej'}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={padamDataTg}
-                  className="w-full rounded-xl border-2 border-rose-400 px-5 py-3 text-sm font-bold uppercase tracking-wide text-rose-600 transition hover:bg-rose-50"
-                >
-                  Padam Data Tersimpan
-                </button>
-
-                {tgStatus.message && (
-                  <div
-                    className={`rounded-xl border px-4 py-3 text-center text-sm font-medium ${
-                      tgStatus.type === 'success'
-                        ? 'border-emerald-400/50 bg-emerald-100 text-emerald-800'
-                        : tgStatus.type === 'error'
-                          ? 'border-rose-400/50 bg-rose-100 text-rose-800'
-                          : 'border-slate-300 bg-slate-50 text-slate-700'
-                    }`}
-                  >
-                    {tgStatus.message}
-                  </div>
-                )}
-              </div>
-            </div>
+        {tgStatus.message && (
+          <div
+            className={`rounded-xl border px-4 py-3 text-center text-sm font-medium ${
+              tgStatus.type === 'success'
+                ? 'border-emerald-400/50 bg-emerald-100 text-emerald-800'
+                : tgStatus.type === 'error'
+                  ? 'border-rose-400/50 bg-rose-100 text-rose-800'
+                  : 'border-slate-300 bg-slate-50 text-slate-700'
+            }`}
+          >
+            {tgStatus.message}
           </div>
         )}
-
+      </div>
+    </div>
+  </div>
+)}
         {/* Theme Switcher (bawah) */}
         <div className="mt-8 flex flex-wrap justify-center gap-2">
           {THEMES.map((theme) => (
