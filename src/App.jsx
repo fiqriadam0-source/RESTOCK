@@ -53,7 +53,7 @@ const THEMES = [
 
 function App() {
   const endpoint =
-    'https://script.google.com/macros/s/AKfycbyGs4rHfYF49GbYVX4FGSpuAxyZcTSrhbExkBifXoDSEo-6y_Z4v02r11H7o4c48mWZ/exec'
+    'https://script.google.com/macros/s/AKfycbxjMbJdxiYlZR_KZQe4SL7m2y3olsHu7_bjJ2v7KGrfNN3Mv4CR6geCK1PzhuNtReQm/exec'
 
   // ===== NAVIGATION =====
   const [currentPage, setCurrentPage] = useState('restock') // restock | stock | telegram
