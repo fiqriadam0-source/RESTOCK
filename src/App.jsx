@@ -63,8 +63,11 @@ function App() {
   // ===== RESTOK STATE =====
   const [materials, setMaterials] = useState([])
   const [material, setMaterial] = useState('')
+  const [saiz, setSaiz] = useState('')
+  const [availableSizes, setAvailableSizes] = useState([])
   const [kuantiti, setKuantiti] = useState('')
   const [isLoadingMaterials, setIsLoadingMaterials] = useState(true)
+  const [isLoadingSizes, setIsLoadingSizes] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [status, setStatus] = useState({ type: 'idle', message: '' })
   const [themeId, setThemeId] = useState('corporate')
@@ -143,7 +146,9 @@ function App() {
         const response = await fetch(`${endpoint}?action=getMaterials`)
         const data = await response.json()
         if (!Array.isArray(data)) throw new Error('Format material tidak sah')
-        setMaterials(data)
+
+        const uniqueMaterials = [...new Set(data.map((item) => String(item || '').trim()).filter(Boolean))]
+        setMaterials(uniqueMaterials)
       } catch (error) {
         setStatus({
           type: 'error',
@@ -190,22 +195,70 @@ function App() {
   )
 
   const filteredMaterials = useMemo(() => {
-  const keyword = material.trim().toLowerCase()
+    const keyword = material.trim().toLowerCase()
 
-  if (!keyword) {
-    return materials
+    if (!keyword) {
+      return materials
+    }
+
+    return materials.filter((item) => item.toLowerCase().includes(keyword))
+  }, [material, materials])
+
+  const fetchSizesForMaterial = async (selectedMaterial) => {
+    const cleanMaterial = String(selectedMaterial || '').trim()
+
+    setSaiz('')
+    setAvailableSizes([])
+
+    if (!cleanMaterial) {
+      return
+    }
+
+    setIsLoadingSizes(true)
+
+    try {
+      const response = await fetch(
+        `${endpoint}?action=getSizesByMaterial&material=${encodeURIComponent(cleanMaterial)}`,
+      )
+      const data = await response.json()
+
+      const sizes = Array.isArray(data)
+        ? [...new Set(data.map((size) => String(size || '').trim()).filter(Boolean))]
+        : []
+
+      setAvailableSizes(sizes)
+      if (sizes.length === 1) {
+        setSaiz(sizes[0])
+      }
+    } catch (error) {
+      setAvailableSizes([])
+      setSaiz('')
+    } finally {
+      setIsLoadingSizes(false)
+    }
   }
 
-  return materials.filter((item) =>
-    item.toLowerCase().includes(keyword)
-  )
-}, [material, materials])
+  const handleMaterialSelect = (selectedMaterial) => {
+    const cleanMaterial = String(selectedMaterial || '').trim()
+    setMaterial(cleanMaterial)
+    setSaiz('')
+    setAvailableSizes([])
+    setIsMaterialMenuOpen(false)
+    if (cleanMaterial) {
+      fetchSizesForMaterial(cleanMaterial)
+    }
+  }
 
   const handleSubmit = async (event) => {
     event.preventDefault()
 
     if (!material.trim()) {
       setStatus({ type: 'error', message: 'Material wajib diisi.' })
+      return
+    }
+
+    if (availableSizes.length > 0 && !saiz.trim()) {
+      setStatus({ type: 'error', message: 'Sila pilih saiz bahan sebelum hantar restok.' })
       return
     }
 
@@ -220,6 +273,7 @@ function App() {
 
     const formData = new FormData()
     formData.append('material', material.trim())
+    formData.append('saiz', saiz.trim())
     formData.append('kuantiti', String(jumlah))
     formData.append('type', 'restock')
 
@@ -357,7 +411,14 @@ function App() {
                   value={material}
                   onChange={(event) => {
                     setMaterial(event.target.value)
+                    setSaiz('')
+                    setAvailableSizes([])
                     setIsMaterialMenuOpen(true)
+                  }}
+                  onBlur={() => {
+                    if (material.trim()) {
+                      fetchSizesForMaterial(material)
+                    }
                   }}
                   onFocus={() => setIsMaterialMenuOpen(true)}
                   placeholder={isLoadingMaterials ? 'Memuat material...' : 'Taip atau pilih material'}
@@ -396,10 +457,7 @@ function App() {
                           <button
                             key={item}
                             type="button"
-                            onClick={() => {
-                              setMaterial(item)
-                              setIsMaterialMenuOpen(false)
-                            }}
+                            onClick={() => handleMaterialSelect(item)}
                             className="mb-1 block w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-100 last:mb-0"
                           >
                             {item}
@@ -412,6 +470,31 @@ function App() {
                   </div>
                 )}
               </div>
+
+              <label className="mb-2 block text-sm font-bold uppercase tracking-wide text-slate-700">
+                Saiz
+              </label>
+              <select
+                value={saiz}
+                onChange={(event) => setSaiz(event.target.value)}
+                disabled={isLoadingSizes || isSubmitting || !material.trim() || availableSizes.length === 0}
+                className={`mb-6 w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition focus:bg-white focus:ring-4 ${activeTheme.inputFocus}`}
+              >
+                <option value="">
+                  {!material.trim()
+                    ? 'Pilih material dahulu'
+                    : isLoadingSizes
+                      ? 'Memuat saiz...'
+                      : availableSizes.length === 0
+                        ? 'Tiada saiz untuk material ini'
+                        : 'Pilih saiz'}
+                </option>
+                {availableSizes.map((sizeOption) => (
+                  <option key={sizeOption} value={sizeOption}>
+                    {sizeOption}
+                  </option>
+                ))}
+              </select>
 
               <label className="mb-2 block text-sm font-bold uppercase tracking-wide text-slate-700">
                 Kuantiti
